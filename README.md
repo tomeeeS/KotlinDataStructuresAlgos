@@ -1,5 +1,4 @@
-# KotlinDataStructuresAlgos
-data structures and algorithms in Kotlin for JVM development
+Data structures and algorithms in Kotlin for JVM development
 
 ## Features
 ### Bag
