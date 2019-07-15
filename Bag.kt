@@ -1,8 +1,8 @@
 import java.lang.Integer.min
 
-class Bag<T> {
+open class Bag<T> {
     
-    private val valuesMap = HashMap<T, Int>()
+    protected val valuesMap = HashMap<T, Int>()
 
     val cardinalities
         get() = valuesMap.values
@@ -36,6 +36,8 @@ class Bag<T> {
     fun contains(value: T) = valuesMap.containsKey(value)
 
     operator fun get(value: T) = valuesMap[value]
+
+    fun clear() { valuesMap.clear() }
 }
 
 // prints 1

@@ -8,16 +8,16 @@ import java.lang.Long.min
 
     Licence: Apache-2.0 (do with it whatever you please)
  */
-class IndefiniteSizeMatrix<T>(private val defaultValue: T, var width: Long = 0, var height: Long = 0 ) {
+open class IndefiniteSizeMatrix<T>(val defaultValue: T, var columnCount: Long = 0, var rowCount: Long = 0 ) {
 
-    private val items: MutableMap<Pair<Long,Long>, T> = HashMap()
-    private var isIniting = true
-    private var hasOverlapped = false
+    protected val items: MutableMap<Pair<Long,Long>, T> = HashMap()
+    protected var isIniting = true
+    protected var hasOverlapped = false
 
     init {
-        width = max(width,  0L)
-        height = max(height,  0L)
-        setAll(0, 0, width - 1, height - 1, defaultValue) { defaultValue }
+        columnCount = max(columnCount,  0L)
+        rowCount = max(rowCount,  0L)
+        setAll(0, 0, columnCount - 1, rowCount - 1, defaultValue) { defaultValue }
         isIniting = false
     }
 
@@ -26,84 +26,71 @@ class IndefiniteSizeMatrix<T>(private val defaultValue: T, var width: Long = 0, 
     // and put its result in place.
     // the params are indices. they're inclusive.
     // returns: has any overlap occurred with previous values (that weren't default)?
-    fun setAll(fromWidth: Long
-               , fromHeight: Long
-               , toWidth: Long
-               , toHeight: Long
+    open fun setAll(fromColumn: Long
+               , fromRow: Long
+               , toColumn: Long
+               , toRow: Long
                , valueForNewCell: T
                , onOverlap: (T) -> T
     ) : Boolean {
+        val fromColumn = max(fromColumn,  0L)
+        val fromRow = max(fromRow,  0L)
+
+        fun setAndExpand() {
+            for (i in 0 until rowCount)
+                for (j in columnCount..toColumn)
+                    setItemInternal(i, j, fromColumn, toColumn, fromRow, toRow, valueForNewCell, onOverlap)
+            columnCount = max(toColumn + 1, columnCount)
+            for (i in rowCount..toRow)
+                for (j in 0 until columnCount)
+                    setItemInternal(i, j, fromColumn, toColumn, fromRow, toRow, valueForNewCell, onOverlap)
+            rowCount = max(toRow + 1, rowCount)
+        }
+
+        fun setWithoutExpand() {
+            for (i in fromRow..min((rowCount - 1), toRow))
+                for (j in fromColumn..min((columnCount - 1), toColumn))
+                    setItemInternal(i, j, fromColumn, toColumn, fromRow, toRow, valueForNewCell, onOverlap)
+        }
+
+        fun expandIfZeroSized() {
+            if (rowCount == 0L || columnCount == 0L && (toRow > 0 && toColumn > 0)) {
+                items[Pair(0L, 0L)] = valueForNewCell
+                rowCount = 1
+                columnCount = 1
+            }
+        }
+
+        fun considerIniting() {
+            if (isIniting) {
+                columnCount = 0
+                rowCount = 0
+            }
+        }
+
         hasOverlapped = false
         considerIniting()
-        val fromWidth = max(fromWidth,  0L)
-        val fromHeight = max(fromHeight,  0L)
-        setWithoutExpand(fromHeight, toHeight, fromWidth, toWidth, onOverlap, valueForNewCell)
-        expandIfZeroSized(toHeight, toWidth, valueForNewCell)
-        setAndExpand(toWidth, fromWidth, fromHeight, toHeight, onOverlap, valueForNewCell)
+        setWithoutExpand()
+        expandIfZeroSized()
+        setAndExpand()
         return hasOverlapped
     }
 
-    private fun setAndExpand(
-        toWidth: Long,
-        fromWidth: Long,
-        fromHeight: Long,
-        toHeight: Long,
-        onOverlap: (T) -> T,
-        valueForNewCell: T
+    protected open fun setItemInternal(
+        i: Long
+        , j: Long
+        , fromColumn: Long
+        , toColumn: Long
+        , fromRow: Long
+        , toRow: Long
+        , valueForNewCell: T
+        , onOverlap: (T) -> T
     ) {
-        for (h in 0 until height)
-            for (w in width..toWidth)
-                setItem(h, w, fromWidth, toWidth, fromHeight, toHeight, onOverlap, valueForNewCell)
-        width = max(toWidth + 1, width)
-        for (h in height..toHeight)
-            for (w in 0 until width)
-                setItem(h, w, fromWidth, toWidth, fromHeight, toHeight, onOverlap, valueForNewCell)
-        height = max(toHeight + 1, height)
-    }
-
-    private fun setWithoutExpand(
-        fromHeight: Long,
-        toHeight: Long,
-        fromWidth: Long,
-        toWidth: Long,
-        onOverlap: (T) -> T,
-        valueForNewCell: T
-    ) {
-        for (h in fromHeight..min((height - 1), toHeight))
-            for (w in fromWidth..min((width - 1), toWidth))
-                setItem(h, w, fromWidth, toWidth, fromHeight, toHeight, onOverlap, valueForNewCell)
-    }
-
-    private fun expandIfZeroSized(toHeight: Long, toWidth: Long, valueForNewCell: T) {
-        if (height == 0L || width == 0L && (toHeight > 0 && toWidth > 0)) {
-            items[Pair(0L, 0L)] = valueForNewCell
-            height = 1
-            width = 1
-        }
-    }
-
-    private fun considerIniting() {
-        if (isIniting) {
-            width = 0
-            height = 0
-        }
-    }
-
-    private fun setItem(
-        h: Long,
-        w: Long,
-        fromWidth: Long,
-        toWidth: Long,
-        fromHeight: Long,
-        toHeight: Long,
-        onOverlap: (T) -> T,
-        valueForNewCell: T
-    ) {
-        items[Pair(h, w)] =
-            if (w in fromWidth..toWidth && h in fromHeight..toHeight)
-                items[Pair(h, w)]
+        items[Pair(i, j)] =
+            if (j in fromColumn..toColumn && i in fromRow..toRow)
+                items[Pair(i, j)]
                     ?.let (
-                        if (items[Pair(h, w)] != defaultValue)
+                        if (items[Pair(i, j)] != defaultValue)
                             onOverlap.also { hasOverlapped = true }
                         else
                             { _ -> valueForNewCell })
@@ -112,35 +99,42 @@ class IndefiniteSizeMatrix<T>(private val defaultValue: T, var width: Long = 0, 
                 defaultValue
     }
 
-    operator fun get(h: Long, w: Long) =  items[Pair(h, w)]!!
+    open fun setItem(
+        rowIndex: Long
+        , columnIndex: Long
+        , valueForNewCell: T
+        , onOverlap: (T) -> T
+    ) = setAll(columnIndex, rowIndex, columnIndex, rowIndex, valueForNewCell, onOverlap)
+
+    operator fun get(i: Long, j: Long) =  items[Pair(i, j)]!!
 
     // have to expand first with setAll
-    operator fun set(h: Long, w: Long, t: T) {
-        items[Pair(h, w)] = t
+    operator fun set(i: Long, j: Long, t: T) {
+        items[Pair(i, j)] = t
     }
 
-    fun countValue(value: T) = items.values.count {  it == value }
+    open fun countValue(value: T) = items.values.count {  it == value }
 
-    fun onEach(f: (T) -> Unit) {
+    open fun onEach(f: (T) -> Unit) {
         items.values.onEach { f(it) }
     }
 
-    fun onEachIndexed(f: (T, Long, Long) -> Unit) {
+    open fun onEachIndexed(f: (T, Long, Long) -> Unit) {
         items.onEach { f(it.value, it.key.component1(), it.key.component2() ) }
     }
 
     override fun toString(): String {
         val sb = StringBuilder()
         sb.append("[ ")
-        for (h in 0 until height) {
-            if(h > 0L)
+        for (i in 0 until rowCount) {
+            if(i > 0L)
                 sb.append("  ")
-            for (w in 0 until width) {
-                if(w > 0L)
+            for (j in 0 until columnCount) {
+                if(j > 0L)
                     sb.append(", ")
-                sb.append(items[Pair(h, w)])
+                sb.append(items[Pair(i, j)])
             }
-            if(h < height - 1)
+            if(i < rowCount - 1)
                 sb.append("\n")
         }
         sb.append(" ]")
@@ -152,5 +146,6 @@ fun main() {
     val matrix = IndefiniteSizeMatrix(0, 2, 2)
     matrix.setAll(1, 1, 2, 2, 1) { 2 }
     matrix.setAll(2, 2, 3, 3, 1) { 2 }
+    matrix.setItem(4, 5, 1) { 2 }
     println(matrix)
 }
