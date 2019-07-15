@@ -1,17 +1,25 @@
-class Bag<T> {
-    private val values = HashMap<T, Int>()
-    var size = 0
-        private set
+class Bag<T : Comparable<T>> {
+    private val valuesMap = HashMap<T, Int>()
 
-    fun add(value: T) {
-        if (values[value] == null)
-            ++size
-        values[value] = values[value]?.plus(1) ?: 1
+    val cardinalities = valuesMap.values
+    val keys = valuesMap.keys
+    val keyCount = valuesMap.size
+    val totalSize = valuesMap.values.sum()
+    val most = valuesMap.toSortedMap().map { Pair(it.key, it.value) }.first()
+
+    fun add(value: T, pieceCount: Int = 1) {
+        valuesMap[value] =
+            valuesMap[value]?.
+                plus(pieceCount)
+            ?:
+                pieceCount
     }
 
-    fun hasCardinality(cardinality: Int) = values.containsValue(cardinality)
+    fun remove(value: T, pieceCount: Int = 1) {
+        valuesMap[value]?.rem(pieceCount)
+    }
 
-    fun contains(value: T) = values.contains(value)
+    fun contains(value: T) = valuesMap.containsKey(value)
 
-    operator fun get(value: T) = values[value]
+    operator fun get(value: T) = valuesMap[value]
 }
