@@ -6,7 +6,7 @@ class Bag<T> {
 
     val cardinalities
         get() = valuesMap.values
-    val items // items or keys in the bag (without their cardinalities)
+    val keys // keys in the bag (without their cardinalities)
         get() = valuesMap.keys
     val keyCount
         get() = valuesMap.size
@@ -17,20 +17,20 @@ class Bag<T> {
                                     .map { Pair(it.key, it.value) }
                                     .first()
 
-    fun add(item: T, pieceCount: Int = 1) {
-        valuesMap[item] =
-            valuesMap[item]?.
+    fun add(key: T, pieceCount: Int = 1) {
+        valuesMap[key] =
+            valuesMap[key]?.
                 plus(pieceCount)
             ?:
                 pieceCount
     }
 
     // safe remove
-    // if the item is in the bag, we remove pieceCount pieces from that item.
-    // if there's not that much pieces from that item, we remove them all.
-    fun remove(item: T, pieceCount: Int = 1) {
-        valuesMap[item]?.let { it.rem(min(pieceCount, it)) }
-            .also { if (it == 0) valuesMap.remove(item) }
+    // if the key is in the bag, we remove pieceCount pieces from that key.
+    // if there's not that much pieces from that key, we remove them all.
+    fun remove(key: T, pieceCount: Int = 1) {
+        valuesMap[key]?.let { it.rem(min(pieceCount, it)) }
+            .also { if (it == 0) valuesMap.remove(key) }
     }
 
     fun contains(value: T) = valuesMap.containsKey(value)
