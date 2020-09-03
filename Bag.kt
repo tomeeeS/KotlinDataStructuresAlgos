@@ -14,7 +14,7 @@ open class Bag<T> {
     val totalSize
         get() = valuesMap.values.sum()
     val most
-        get() = valuesMap.entries.maxBy { it.value }!!.toPair()
+        get() = valuesMap.entries.maxByOrNull { it.value }!!.toPair()
 
     fun add(key: T, pieceCount: Int = 1) {
         valuesMap[key] =
