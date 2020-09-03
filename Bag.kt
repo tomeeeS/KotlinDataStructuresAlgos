@@ -1,5 +1,6 @@
 import java.lang.Integer.min
 
+// not concurrent
 open class Bag<T> {
     
     protected val valuesMap = HashMap<T, Int>()
