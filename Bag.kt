@@ -27,8 +27,11 @@ open class Bag<T> {
     // if the key is in the bag, we remove pieceCount pieces from that key.
     // if there's not that much pieces from that key, we remove them all.
     fun remove(key: T, pieceCount: Int = 1) {
-        valuesMap[key]?.let { it.rem(min(pieceCount, it)) }
-            .also { if (it == 0) valuesMap.remove(key) }
+        if (contains(key)) {
+            val newValue = valuesMap[key]!! - pieceCount
+            valuesMap[key] = newValue
+            if (newValue <= 0)
+                valuesMap.remove(key) }
     }
 
     fun contains(value: T) = valuesMap.containsKey(value)
