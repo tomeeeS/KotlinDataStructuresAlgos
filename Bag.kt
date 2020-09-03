@@ -40,6 +40,10 @@ open class Bag<T> {
             if (newValue <= 0)
                 valuesMap.remove(key) }
     }
+ 
+    fun removeAll(key: T) {
+        valuesMap.remove(key)
+    }
 
     fun contains(value: T) = valuesMap.containsKey(value)
 
