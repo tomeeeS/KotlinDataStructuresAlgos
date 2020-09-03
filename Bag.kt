@@ -1,6 +1,12 @@
 import java.lang.Integer.min
 
-// not concurrent
+/*
+ warning: not concurrent
+ 
+ note: does not extend HashMap<T, Int>, because fun remove(key: T) would clash with HashMap's.
+ here it does not mean remove the key-value pair completely, but just remove 1 of that key,
+ there might be more of that key left in the container.
+ */
 open class Bag<T> {
     
     protected val valuesMap = HashMap<T, Int>()
